@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+import time
+import re
+import requests
+import importlib
+import jieba
+import urllib.request
+from bs4 import BeautifulSoup
+from wordcloud import WordCloud,STOPWORDS,ImageColorGenerator
+import matplotlib.pyplot as plt
+
+def main():
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
+    cookies={'cookie':'ll="108288"; bid=xNbpCio8f0U; __guid=223695111.2427408486131317000.1561541933523.0361; __yadk_uid=543yHJnoQnyM7anwRebmoxdBSGeQIkmi; _vwo_uuid_v2=DEEA10CE136D5D43FCDB6F12DE7E2EAF9|548c08e3d67aa4759e869b0be4515b7a; trc_cookie_storage=taboola%2520global%253Auser-id%3D204db3c0-34c0-4b48-aa4d-8507e482bebe-tuct2cf2832; __gads=ID=a128bd23c8790bc9:T=1561657206:S=ALNI_MbNZSXdP7apIumG5i7VvEiaMHBYTQ; ct=y; gr_user_id=9f0d4689-59ec-4568-b184-3a4f85302dbd; push_noty_num=0; push_doumail_num=0; __utmv=30149280.19868; __utmz=30149280.1561740031.12.5.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmc=30149280; __utmc=223695111; __utmz=223695111.1561808816.14.9.utmcsr=so.com|utmccn=(organic)|utmcmd=organic|utmctr=%E8%B1%86%E7%93%A3; _pk_ref.100001.4cf6=%5B%22%22%2C%22%22%2C1561815040%2C%22https%3A%2F%2Fwww.so.com%2Fs%3Fq%3D%25E8%25B1%2586%25E7%2593%25A3%26ie%3Dutf-8%26src%3Dse7_newtab_new_sug%22%5D; _pk_ses.100001.4cf6=*; __utma=30149280.1307709957.1561541934.1561812178.1561815040.17; __utma=223695111.1831865577.1561541934.1561812178.1561815040.16; __utmb=223695111.0.10.1561815040; __utmb=30149280.1.10.1561815040; dbcl2="198687729:F9m+w7MDolk"; ck=jDjP; ap_v=0,6.0; monitor_count=60; _pk_id.100001.4cf6=5d14f04baf18d407.1561541934.16.1561817060.1561812346.'}
+    for page in range(30):  
+        url =  'https://movie.douban.com/subject/1292722/comments?start='+str(20*page)+'&limit=20&sort=new_score&status=P'
+        #遍历20页评论页面每页的url
+        html = requests.get(url, cookies = cookies, headers = headers)
+        #用已经获得的url以及头数据发起http请求并取得源码
+        print(f"正在爬取：{url}")
+        time.sleep(0.5)
+        soupcomment = BeautifulSoup(html.content, from_encoding='utf-8')
+        #利用BS对网页的源代码进行解析
+        comments = soupcomment.findAll('span', 'short')
+        #根据短评的属性找到解析后的所有短评
+        onePageComments = []
+        for comment in comments:
+            onePageComments.append(comment.getText()+'\n')
+            #将得到的热评存储于列表中
+        with open('泰坦尼克号.txt','a',encoding="utf-8") as f:
+        #打开一个名为泰坦尼克号的txt文件，没有的话则创建一个
+            for i in onePageComments:
+                f.write(i)
+   
+    comment_text = open('泰坦尼克号.txt','r',encoding = 'utf-8').read()
+    backgroud_Image = plt.imread('泰坦尼克号.jpg')
+    #读取词云的背景图片
+    cut_text = " ".join(jieba.cut(comment_text))
+    #运用jieba对评论进行分词处理，否则无法直接生成正确的中文词云。
+    cloud = WordCloud(
+         width=5000,
+         height=3000,
+         font_path="simsun.ttf",
+         #设置字体，不指定就会出现乱码         
+         background_color='white',
+         #设置背景色
+         mask = backgroud_Image,
+         #词云形状    
+         max_words=200,
+         #允许最大词汇
+         stopwords = ["电影","影片","这部","片子","一次","面前","时候","真的"],
+         #停用词词库
+         max_font_size=40  
+         #最大号字体
+     )
+    word_cloud = cloud.generate(cut_text) 
+    # 产生词云
+    image_colors = ImageColorGenerator(backgroud_Image)
+    #从背景图片生成颜色值
+    word_cloud.recolor(color_func = image_colors)
+    #词云颜色
+    plt.imshow(word_cloud)
+    plt.axis('off')
+    plt.show()
+    # 显示词云图片
+    print("爬取完毕。")
+if __name__ == '__main__':
+    main()
